@@ -1,0 +1,285 @@
+Position - Where your object is
+Velocity - The direction and rate your object is changing its position
+Acceleration - The direction and rate your object is changing its velocity
+----------------------------------------------------------------
+Basic Accel/Deccel
+
+if (key_right)
+    {
+    if (hsp < hsp_max-accel) hsp += accel;
+    if (hsp >= hsp_max-accel) hsp = hsp_max;
+    }
+
+if (key_left)
+    {
+    if (hsp > -hsp_max+accel) hsp -= accel;
+    if (hsp <= -hsp_max+accel) hsp = hsp_max;
+    }
+
+if (!key_right && !key_left) || (key_right && key_left)
+    {
+    if (hsp >= decel) hsp -= decel;
+    if (hsp <= -decel) hsp += decel;
+    if (hsp > -decel) && (hsp < decel) hsp = 0;
+    }
+
+----------------------------------------------------------------
+
+A more complex form of accel/decel
+
+final PLAYER_MAX_SPEED = 1.0f;
+final PLAYER_ACCELERATION = 0.2f
+double playerVelocity = 0.0f;
+
+public void update() {        // Called every frame, and assuming constant fps
+
+    if (forward_button_down) {
+
+        // The player is holding the "move forward" button
+        playerVelocity += PLAYER_ACCELERATION;
+        if (playerVelocity > PLAYER_MAX_SPEED) {
+            playerVelocity = PLAYER_MAX_SPEED;
+        }
+
+    } else if (backward_button_down) {
+
+        // The player is holding the "move backward" button
+        playerVelocity -= PLAYER_ACCELERATION;
+        if (playerVelocity < -PLAYER_MAX_SPEED) {
+            playerVelocity = -PLAYER_MAX_SPEED;
+        }
+
+    } else {
+
+        // Neither forward nor backward pressed
+        if (playerVelocity < 0) {
+            playerVelocity += PLAYER_ACCELERATION;
+            if (playerVelocity >= 0) {
+                playerVelocity = 0.0f;
+            }
+        } else {
+            playerVelocity -= PLAYER_ACCELERATION;
+            if (playerVelocity <= 0) {
+                playerVelocity = 0.0f;
+        }
+    }
+}
+
+----------------------------------------------------------------
+
+player.x += player.velocity.x * dt;
+player.y += player.velocity.y * dt;
+Where dt is the time since the last update. Now if we want to change the velocity with respect to time, we just need to add a line like this:
+
+player.velocity.x += player.acceleration.x * dt;
+player.velocity.y += player.acceleration.y * dt;
+Now, if we want to modify that acceleration with the keyboard, we can do something simple like:
+
+if (KeyboardState.IsKeyDown(Keys.Right))
+    player.acceleration.x += .01f;
+
+----------------------------------------------------------------
+
+class Vector
+{
+public:
+	Vector() {}
+	Vector(float X, float Y)
+	{
+		x = X
+		y = Y
+	}
+
+	float Length() const;
+	float LengthSqr() const;
+	Vector Normalized() const;
+
+	Vector operator*(float s) const;
+	Vector operator/(float s) const;
+	Vector operator+(Vector a, Vector b) const;
+
+public:
+	float x,y;
+};
+
+float Vector::Length() const
+{
+	float length;
+
+	length = sqrt(x*x + y*y);
+
+	return length;
+}
+
+float Vector::LengthSqr() const
+{
+	float length;
+
+	length = (x*x + y*y);
+
+	return length;
+}
+
+Vector Vector::Normalized() const
+{
+	Vector normalized;
+
+	normalized = (*this) / Length();
+
+	return normalized;
+}
+
+Vector Vector::operator*(float s) const
+{
+	Vector scaled;
+
+	scaled.x = x * s;
+	scaled.y = y * s;
+
+	return scaled;
+}
+
+Vector Vector::operator/(float s) const
+{
+	Vector scaled;
+
+	scaled.x = x / s;
+	scaled.y = y / s;
+
+	return scaled;
+}
+
+Vector Vector::operator+(Vector a, Vector b) const
+{
+	Vector v;
+
+	v.x = a.x + b.x;
+	v.y = a.y + b.y;
+
+	return v;
+}
+
+Vector Vector::operator-(Vector a, Vector b) const
+{
+	Vector v;
+
+	v.x = a.x - b.x;
+	v.y = a.y - b.y;
+
+	return v;
+}
+
+----------------------------------------------------------------
+
+update Update(float dt)
+{
+	mario.position = mario.position + mario.velocity * dt;
+	mario.velocity = mario.velocity + mario.gravity * dt;
+}
+
+void Main()
+{
+	mario.position = Point(0,0);
+	mario.velocity = Vector(2,2);
+	mario.gravity = Vector(0,-2);
+
+	// delta time
+	float flPreviousTime = 0;
+	float flCurrentTime = GetCurrentTime();
+
+	//loop
+	while(true)
+	{
+		flPreviousTime = flCurrentTime
+		flCurrentTime = GetCurrentTime();
+
+		float dt = flCurrentTime - flPreviousTime;
+
+		//lock dt
+		if (dt > 0.15ft)
+			dt = 0.15f;
+
+		Update(dt);
+
+		Draw();
+	}
+}
+
+----------------------------------------------------------------
+//lerping
+
+/*Approach(G,C,dt)
+	if C < G
+		return C+dt;
+	else
+		return G;
+	then plug return value back into Approach as C
+*/
+
+float Approach(float flGoal, float flCurrent, float dt)
+{
+	float flDifference = flGoal - flCurrent;
+	
+	if (flDifference > dt)
+		return flCurrent + dt;
+	if (flDifference < -dt)
+		return flCurrent - dt;
+	
+	return flGoal;
+}
+
+/*
+	so rather than vel = 5
+	it would be velGoal = 5
+*/
+
+//old, before using lerping
+
+void Update(dt)
+{
+	box.vecPosition = box.vecPosition + box.vecVelocity * dt;
+	box.VecVelocity = box.vecVelocity + box.vecGravity * dt;
+
+	//make sure doesn't fall through floor
+	if (box.vecPosition.y < 0)
+		box.vecPosition = 0;
+}
+
+//new with lerping
+
+void Update(dt)
+{
+	box.vecVelocity.x = Approach(box.vecVelocityGoal.x, box.vecVelocity.x, dt * 20) //times 20 cause just by *dt is too slow
+	box.vecVelocity.y = Approach(box.vecVelocityGoal.y, box.vecVelocity.y, dt * 20) //maybe 20 could be used as drag/interia? YES YES IT CAN HIGHER IS MORE RESPONSIVE/SHARPER
+
+	box.vecPosition = box.vecPosition + box.vecVelocity * dt;
+	box.VecVelocity = box.vecVelocity + box.vecGravity * dt;
+	
+	//make sure doesn't fall through floor
+	if (box.vecPosition.y < 0)
+		box.vecPosition = 0;
+}
+
+----------------------------------------------------------------
+
+/*
+Weighted averaging: acceleration is a number (“a”) from 0 (no change) to 1 (instant acceleration). 
+Use that value to linearly interpolate between target and current speed, and set the result as current speed.
+*/
+
+vector2f curSpeed = a * targetSpeed + (1-a) * curSpeed;
+if (fabs(curSpeed.x) < threshold) curSpeed.x = 0;
+if (fabs(curSpeed.y) < threshold) curSpeed.y = 0;
+
+/*
+Adding acceleration: We’ll determine which direction to add the acceleration to 
+(using the sign function, which returns 1 for numbers >0 and -1 for <0), then check if we overshot.
+*/
+
+vector2f direction = vector2f(sign(targetSpeed.x - curSpeed.x),
+	sign(targetSpeed.y - curSpeed.y));
+curSpeed += acceleration * direction;
+if (sign(targetSpeed.x - curSpeed.x) != direction.x)
+	curSpeed.x = targetSpeed.x;
+if (sign(targetSpeed.y - curSpeed.y) != direction.y)
+	curSpeed.y = targetSpeed.y;
